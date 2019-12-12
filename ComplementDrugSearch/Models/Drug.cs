@@ -40,6 +40,7 @@ namespace ComplementDrugSearch.Models
         /// </summary>
         /// <param name="name">The name of the drug.</param>
         /// <param name="protein">The target protein of the drug.</param>
+        /// <param name="direction">The direction of the protein when the drug is applied.</param>
         public Drug(string name, Protein protein, int direction)
         {
             // Assign the value for each property.

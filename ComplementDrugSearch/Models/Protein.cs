@@ -44,6 +44,7 @@ namespace ComplementDrugSearch.Models
         /// <summary>
         /// Initializes a new instance of the class.
         /// </summary>
+        /// <param name="index">The protein index within the network.</param>
         /// <param name="name">The name of the protein.</param>
         /// <param name="isDiseaseEssential">The disease essential status of the protein.</param>
         /// <param name="isHealthyEssential">The healthy essential status of the protein.</param>
