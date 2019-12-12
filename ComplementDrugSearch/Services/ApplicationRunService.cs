@@ -159,7 +159,7 @@ namespace ComplementDrugSearch.Services
                 proteins = rows.Select(item => item[0])
                     .Concat(rows.Select(item => item[1]))
                     .Distinct()
-                    .Select(item => new Protein(item, false, false))
+                    .Select((item, index) => new Protein(index, item, false, false))
                     .ToList();
                 // Get all of the interactions.
                 interactions = rows
@@ -354,8 +354,6 @@ namespace ComplementDrugSearch.Services
             stopwatch.Start();
             // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the corresponding matrices and matrix powers.");
-            // Get a dictionary with the index of each protein in the list.
-            var proteinIndex = proteins.Select((item, index) => (item, index)).ToDictionary(item => item.item, item => item.index);
             // Get the direction and adjacency matrix.
             var adjacencyMatrix = Matrix<double>.Build.Sparse(proteins.Count(), proteins.Count());
             var directionMatrix = Matrix<double>.Build.Sparse(proteins.Count(), proteins.Count());
@@ -363,8 +361,8 @@ namespace ComplementDrugSearch.Services
             foreach (var interaction in interactions)
             {
                 // Set the corresponding entry in both matrices.
-                adjacencyMatrix[proteinIndex[interaction.SourceProtein], proteinIndex[interaction.TargetProtein]] = 1;
-                directionMatrix[proteinIndex[interaction.SourceProtein], proteinIndex[interaction.TargetProtein]] = interaction.Direction;
+                adjacencyMatrix[interaction.SourceProtein.Index, interaction.TargetProtein.Index] = 1;
+                directionMatrix[interaction.SourceProtein.Index, interaction.TargetProtein.Index] = interaction.Direction;
             }
             // Define the matrix lists.
             var adjacencyMatrixList = new List<Matrix<double>> { Matrix<double>.Build.SparseIdentity(proteins.Count(), proteins.Count()) };
@@ -381,7 +379,7 @@ namespace ComplementDrugSearch.Services
             // Get all proteins which can be reached from the initial drug within maximum path.
             var subgraphProteins = adjacencyMatrixList
                 .Select(item => item
-                    .Row(proteinIndex[initialDrug.Protein])
+                    .Row(initialDrug.Protein.Index)
                     .Select((value, index) => new { Item1 = value, Item2 = index })
                     .Where(item1 => item1.Item1 != 0)
                     .Select(item1 => item1.Item2))
@@ -401,12 +399,14 @@ namespace ComplementDrugSearch.Services
                 return Task.CompletedTask;
             }
             // Log a message.
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {subgraphProteins.Count()} proteins in the subgraph, out of which {subgraphEssentialProteins.Count()} are essential.");
+            // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the extended subgraph.");
             // Get all proteins which can reach the essential proteins in the subgraph within maximum path.
             var extendedSubgraphProteins = adjacencyMatrixList
                 .Select(item => subgraphEssentialProteins
                     .Select(item1 => item
-                        .Column(proteinIndex[item1])
+                        .Column(item1.Index)
                         .Select((value, index) => new { Item1 = value, Item2 = index })
                         .Where(item2 => item2.Item1 != 0)
                         .Select(item2 => item2.Item2))
@@ -426,6 +426,8 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return Task.CompletedTask;
             }
+            // Log a message.
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {extendedSubgraphProteins.Count()} proteins and {extendedSubgraphDrugs.Count()} drugs in the extended subgraph.");
             // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the direction from drugs to essential proteins within the extended subgraph.");
             // Define the dictionary with the essential protein data for each drug in the extended subgraph.
@@ -451,7 +453,7 @@ namespace ComplementDrugSearch.Services
                 // Get all proteins which can be reached from the drug within maximum path.
                 var drugSubgraphProteins = adjacencyMatrixList
                     .Select(item => item
-                        .Row(proteinIndex[drug.Protein])
+                        .Row(drug.Protein.Index)
                         .Select((value, index) => new { Item1 = value, Item2 = index })
                         .Where(item1 => item1.Item1 != 0)
                         .Select(item1 => item1.Item2))
@@ -462,8 +464,8 @@ namespace ComplementDrugSearch.Services
                 foreach (var drugEssentialProtein in drugSubgraphProteins.Where(item => item.IsDiseaseEssential || item.IsHealthyEssential))
                 {
                     // Get the lists of corresponding rows in each matrix list.
-                    var adjacencyRowList = adjacencyMatrixList.Select(item => item[proteinIndex[drug.Protein], proteinIndex[drugEssentialProtein]]).ToList();
-                    var directionRowList = directionMatrixList.Select(item => item[proteinIndex[drug.Protein], proteinIndex[drugEssentialProtein]]).ToList();
+                    var adjacencyRowList = adjacencyMatrixList.Select(item => item[drug.Protein.Index, drugEssentialProtein.Index]).ToList();
+                    var directionRowList = directionMatrixList.Select(item => item[drug.Protein.Index, drugEssentialProtein.Index]).ToList();
                     // Define the directions for the essential protein, for each path length.
                     var directions = new List<int>();
                     // Go over each row.
@@ -706,14 +708,16 @@ namespace ComplementDrugSearch.Services
                 {
                     Drug = initialDrug.Name,
                     DrugTarget = initialDrug.Protein.Name,
-                    EssentialProteins = drugDictionary[initialDrug].ToDictionary(item => item.Key.Name, item => item.Value)
+                    DiseaseEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsDiseaseEssential).ToDictionary(item => item.Key.Name, item => item.Value),
+                    HealthyEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsDiseaseEssential).ToDictionary(item => item.Key.Name, item => item.Value)
                 },
                 SortedDrugs = drugSolutions.Select(item => new
                 {
                     Drug = item.Name,
                     DrugTarget = item.Protein.Name,
                     Score = drugScoreDictionary[item],
-                    EssentialProteins = drugDictionary[item].ToDictionary(item => item.Key.Name, item => item.Value)
+                    DiseaseEssentialProteins = drugDictionary[item].Where(item1 => item1.Key.IsDiseaseEssential).ToDictionary(item1 => item1.Key.Name, item1 => item1.Value),
+                    HealthyEssentialProteins = drugDictionary[item].Where(item1 => item1.Key.IsDiseaseEssential).ToDictionary(item1 => item1.Key.Name, item1 => item1.Value)
                 })
             }, new JsonSerializerOptions { WriteIndented = true });
             // Log a message.

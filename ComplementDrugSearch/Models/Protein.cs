@@ -10,6 +10,11 @@ namespace ComplementDrugSearch.Models
     public class Protein
     {
         /// <summary>
+        /// Represents the protein index within the network.
+        /// </summary>
+        public int Index { get; set; }
+
+        /// <summary>
         /// Represents the protein name.
         /// </summary>
         public string Name { get; set; }
@@ -30,6 +35,7 @@ namespace ComplementDrugSearch.Models
         public Protein()
         {
             // Assign the default value for each property.
+            Index = 0;
             Name = null;
             IsDiseaseEssential = false;
             IsHealthyEssential = false;
@@ -41,9 +47,10 @@ namespace ComplementDrugSearch.Models
         /// <param name="name">The name of the protein.</param>
         /// <param name="isDiseaseEssential">The disease essential status of the protein.</param>
         /// <param name="isHealthyEssential">The healthy essential status of the protein.</param>
-        public Protein(string name, bool isDiseaseEssential, bool isHealthyEssential)
+        public Protein(int index, string name, bool isDiseaseEssential, bool isHealthyEssential)
         {
             // Assign the value for each property.
+            Index = index;
             Name = name;
             IsDiseaseEssential = isDiseaseEssential;
             IsHealthyEssential = isHealthyEssential;
