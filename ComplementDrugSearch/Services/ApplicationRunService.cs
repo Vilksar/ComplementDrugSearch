@@ -468,13 +468,13 @@ namespace ComplementDrugSearch.Services
                     var directionRowList = directionMatrixList.Select(item => item[drug.Protein.Index, drugEssentialProtein.Index]).ToList();
                     // Define the directions for the essential protein, for each path length.
                     var directions = new List<int>();
-                    // Go over each row.
+                    // Go over each possible path.
                     for (int index = 0; index < adjacencyRowList.Count(); index++)
                     {
-                        // Check if there is a path.
+                        // Check if there actually exists a path.
                         if (adjacencyRowList[index] != 0)
                         {
-                            // Check if they have the same value, and the equivalent weight.
+                            // Check if they have the same equivalent direction.
                             if (Math.Abs(directionRowList[index]) == adjacencyRowList[index])
                             {
                                 // Assign the direction.
@@ -491,7 +491,7 @@ namespace ComplementDrugSearch.Services
                     if (directions.First() != 0 && directions.Distinct().Count() == 1)
                     {
                         // Assign the direction.
-                        drugDictionary[drug][drugEssentialProtein] = directions.First();
+                        drugDictionary[drug][drugEssentialProtein] = directions.First() * drug.Direction;
                     }
                 }
             }
@@ -709,7 +709,7 @@ namespace ComplementDrugSearch.Services
                     Drug = initialDrug.Name,
                     DrugTarget = initialDrug.Protein.Name,
                     DiseaseEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsDiseaseEssential).ToDictionary(item => item.Key.Name, item => item.Value),
-                    HealthyEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsDiseaseEssential).ToDictionary(item => item.Key.Name, item => item.Value)
+                    HealthyEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsHealthyEssential).ToDictionary(item => item.Key.Name, item => item.Value)
                 },
                 SortedDrugs = drugSolutions.Select(item => new
                 {
@@ -717,7 +717,7 @@ namespace ComplementDrugSearch.Services
                     DrugTarget = item.Protein.Name,
                     Score = drugScoreDictionary[item],
                     DiseaseEssentialProteins = drugDictionary[item].Where(item1 => item1.Key.IsDiseaseEssential).ToDictionary(item1 => item1.Key.Name, item1 => item1.Value),
-                    HealthyEssentialProteins = drugDictionary[item].Where(item1 => item1.Key.IsDiseaseEssential).ToDictionary(item1 => item1.Key.Name, item1 => item1.Value)
+                    HealthyEssentialProteins = drugDictionary[item].Where(item1 => item1.Key.IsHealthyEssential).ToDictionary(item1 => item1.Key.Name, item1 => item1.Value)
                 })
             }, new JsonSerializerOptions { WriteIndented = true });
             // Log a message.
