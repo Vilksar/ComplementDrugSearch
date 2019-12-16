@@ -57,7 +57,21 @@ namespace ComplementDrugSearch.Services
             if (bool.TryParse(_configuration["Help"], out var displayHelp) && displayHelp)
             {
                 // Log a message.
-                _logger.LogInformation($"");
+                _logger.LogInformation(string.Concat(
+                    "\n\tWelcome to the ComplimentDrugSearch application!",
+                    "\n\t",
+                    "\n\t---",
+                    "\n\t",
+                    "\n\tThe following arguments can be provided:",
+                    "\n\t--Help\tUse this parameter to display this help message.",
+                    "\n\t--Interactions\tUse this parameter to specify the path to the file containing the protein-protein interactions. Each interaction should be on a new line, with its elements separated by tab characters.",
+                    "\n\t--Drugs\tUse this parameter to specify the path to the file containing the possible drugs. Each drug should be on a new line, with its elements separated by tab characters.",
+                    "\n\t--DiseaseEssentialProteins\t(optional) Use this parameter to specify the path to the file containing the disease-essential proteins. Only proteins appearing in the interactions will be considered. Each protein should be on a new line. The parameter can be omitted if healthy-essential proteins are provided.",
+                    "\n\t--HealthyEssentialProteins\t(optional) Use this parameter to specify the path to the file containing the disease-essential proteins. Only proteins appearing in the interactions will be considered. Each protein should be on a new line. The parameter can be omitted if disease-essential proteins are provided.",
+                    "\n\t--Output\t(optional) Use this parameter to specify the path to the output file to be returned and created by the current run of the application. Writing permission is needed for the corresponding directory. If the file already exists, it will be overwritten! By default, the output file will be created in the same directory as the interactions file.",
+                    "\n\t--Initial\tUse this parameter to specify the name of the initial drug or drug target, whose complement is needed.",
+                    "\n\t--MaximumPath\t(optional) Use this parameter to specify the length of the maximum path between the drug targets and the essential proteins. By default, it is equal to \"3\".",
+                    "\n\t--NumberOfSolutions\t(optional) Use this parameter to specify the maximum number of solutions to be returned by the application. By default, it is equal to \"10\"."));
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
@@ -68,9 +82,10 @@ namespace ComplementDrugSearch.Services
             var drugsFilepath = _configuration["Drugs"];
             var diseaseEssentialProteinsFilepath = _configuration["DiseaseEssentialProteins"];
             var healthyEssentialProteinsFilepath = _configuration["HealthyEssentialProteins"];
+            var outputFilepath = _configuration["Output"];
             var initialDrugString = _configuration["Initial"];
-            var maximumPathString = _configuration["MaximumPath"] ?? "3";
-            var numberOfSolutionsString = _configuration["NumberOfSolutions"] ?? "10";
+            var maximumPathString = _configuration["MaximumPath"];
+            var numberOfSolutionsString = _configuration["NumberOfSolutions"];
             // Check if we have a file containing the interactions.
             if (string.IsNullOrEmpty(interactionsFilepath))
             {
@@ -307,6 +322,8 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return Task.CompletedTask;
             }
+            // Assign the default maximum path.
+            maximumPathString = !string.IsNullOrEmpty(maximumPathString) ? maximumPathString : "3";
             // Try to parse the maximum path.
             if (!int.TryParse(maximumPathString, out var maximumPath))
             {
@@ -327,6 +344,8 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return Task.CompletedTask;
             }
+            // Assign the default number of returned solutions.
+            numberOfSolutionsString = !string.IsNullOrEmpty(numberOfSolutionsString) ? numberOfSolutionsString : "10";
             // Try to parse the number of solutions.
             if (!int.TryParse(numberOfSolutionsString, out var numberOfSolutions))
             {
@@ -347,8 +366,14 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return Task.CompletedTask;
             }
+            // Check if there isn't any output filepath.
+            if (string.IsNullOrEmpty(outputFilepath))
+            {
+                // Assign the default value.
+                outputFilepath = Path.Combine(Path.GetFullPath(interactionsFilepath).Replace(Path.GetFileName(interactionsFilepath), string.Empty), $"{initialDrug.Name}_{initialDrug.Protein.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json".Replace(" ", string.Empty));
+            }
             // Log a message about the loaded data.
-            _logger.LogInformation($"Data loaded successfully.\n\tThere are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential and {proteins.Count(item => item.IsHealthyEssential)} healthy essential) and {interactions.Count()} interactions.\n\tThe initial drug is \"{initialDrug.Name}\" (with the drug target \"{initialDrug.Protein.Name}\").\n\tThe maximum path length is {maximumPath}.\n\tThe number of solutions that will be displayed is {numberOfSolutions}.");
+            _logger.LogInformation($"The data has been loaded successfully. There are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential and {proteins.Count(item => item.IsHealthyEssential)} healthy essential) and {interactions.Count()} interactions. The program will look for complement drugs around the initial drug \"{initialDrug.Name}\" (with the drug target \"{initialDrug.Protein.Name}\"), up to a maximum path length of \"{maximumPath}\" and save \"{numberOfSolutions}\" solution(s) to the output file \"{outputFilepath}\".");
             // Define a new stopwatch to measure the running time and start it.
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -681,8 +706,7 @@ namespace ComplementDrugSearch.Services
             var drugSolutions = drugScoreDictionary.OrderByDescending(item => item.Value).Take(numberOfSolutions).Select(item => item.Key);
             // Stop the measuring watch.
             stopwatch.Stop();
-            // Define the output file name and text to be written to it.
-            var outputFilepath = Path.Combine(Path.GetFullPath(interactionsFilepath).Replace(Path.GetFileName(interactionsFilepath), string.Empty), $"{initialDrug.Name}_{initialDrug.Protein.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json".Replace(" ", string.Empty));
+            // Define the output text to be written.
             var outputText = JsonSerializer.Serialize(new
             {
                 Data = new
@@ -721,7 +745,7 @@ namespace ComplementDrugSearch.Services
                 })
             }, new JsonSerializerOptions { WriteIndented = true });
             // Log a message.
-            _logger.LogInformation($"{DateTime.Now.ToString()}: Writing the results in JSON format to file {outputFilepath}.");
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Writing the results in JSON format to file \"{outputFilepath}\".");
             // Try to write the results.
             try
             {
@@ -731,7 +755,7 @@ namespace ComplementDrugSearch.Services
             catch (Exception ex)
             {
                 // Log an error.
-                _logger.LogError($"The error {ex.Message} occured while writing to the results to the file \"{outputFilepath}\". The results will be displayed here instead.");
+                _logger.LogError($"The error \"{ex.Message}\" occured while writing the results to the file \"{outputFilepath}\". The results will be displayed in the console instead.");
                 // Log a message.
                 _logger.LogInformation($"\n{outputText}");
                 // Stop the application.
