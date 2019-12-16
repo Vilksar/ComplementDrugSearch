@@ -64,14 +64,19 @@ namespace ComplementDrugSearch.Services
                     "\n\t",
                     "\n\tThe following arguments can be provided:",
                     "\n\t--Help\tUse this parameter to display this help message.",
-                    "\n\t--Interactions\tUse this parameter to specify the path to the file containing the protein-protein interactions. Each interaction should be on a new line, with its elements separated by tab characters.",
-                    "\n\t--Drugs\tUse this parameter to specify the path to the file containing the possible drugs. Each drug should be on a new line, with its elements separated by tab characters.",
+                    "\n\t--Interactions\tUse this parameter to specify the path to the file containing the protein-protein interactions. Each interaction should be on a new line, with its elements separated by tab characters. Each interaction should contain the source protein, the target protein, and the type (\"-1\" for a down-regulating interaction or equivalent, \"1\" for an up-regulating interaction or equivalent, or \"0\" otherwise).",
+                    "\n\t--Drugs\tUse this parameter to specify the path to the file containing the possible drugs. Each drug should be on a new line, with its elements separated by tab characters. Each drug should contain the drug name, the corresponding drug target, and the type (\"-1\" for a drug that down-regulates its drug target, \"1\" for a drug that up-regulates its drug target, or \"0\" otherwise). Only the drugs with drug targets appearing in the interactions will be considered.",
                     "\n\t--DiseaseEssentialProteins\t(optional) Use this parameter to specify the path to the file containing the disease-essential proteins. Only proteins appearing in the interactions will be considered. Each protein should be on a new line. The parameter can be omitted if healthy-essential proteins are provided.",
                     "\n\t--HealthyEssentialProteins\t(optional) Use this parameter to specify the path to the file containing the disease-essential proteins. Only proteins appearing in the interactions will be considered. Each protein should be on a new line. The parameter can be omitted if disease-essential proteins are provided.",
                     "\n\t--Output\t(optional) Use this parameter to specify the path to the output file to be returned and created by the current run of the application. Writing permission is needed for the corresponding directory. If the file already exists, it will be overwritten! By default, the output file will be created in the same directory as the interactions file.",
-                    "\n\t--Initial\tUse this parameter to specify the name of the initial drug or drug target, whose complement is needed.",
+                    "\n\t--Initial\tUse this parameter to specify the name of the initial drug or drug target, whose complement is needed. The initial drug must be in the list of drugs, and its corresponding drug target must appear in the interactions.",
                     "\n\t--MaximumPath\t(optional) Use this parameter to specify the length of the maximum path between the drug targets and the essential proteins. By default, it is equal to \"3\".",
-                    "\n\t--NumberOfSolutions\t(optional) Use this parameter to specify the maximum number of solutions to be returned by the application. By default, it is equal to \"10\"."));
+                    "\n\t--NumberOfSolutions\t(optional) Use this parameter to specify the maximum number of solutions to be returned by the application. By default, it is equal to \"10\".",
+                    "\n\tExamples of posible usage:",
+                    "\n\t--Help \"True\"",
+                    "\n\t--Interactions \"Path/To/FileContainingInteractions.extension\" --Drugs \"Path/To/FileContainingDrugs.extension\" --DiseaseEssentialProteins \"Path/To/FileContainingDiseaseEssentialProteins.extension\" --Initial \"InitialDrugName\"",
+                    "\n\t--Interactions \"Path/To/FileContainingInteractions.extension\" --Drugs \"Path/To/FileContainingDrugs.extension\" --DiseaseEssentialProteins \"Path/To/FileContainingDiseaseEssentialProteins.extension\" --HealthyEssentialProteins \"Path/To/FileContainingHealthyEssentialProteins.extension\" --Initial \"InitialDrugName\" --Output \"Path/To/OutputFile.extension\" --MaximumPath \"3\" --NumberOfSolutions \"10\"",
+                    "\n\t"));
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
