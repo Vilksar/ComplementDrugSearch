@@ -481,7 +481,7 @@ namespace ComplementDrugSearch.Services
                             if (Math.Abs(directionRowList[index]) == adjacencyRowList[index])
                             {
                                 // Assign the direction.
-                                directions.Add((int) directionRowList[index] / (int) adjacencyRowList[index]);
+                                directions.Add((int)directionRowList[index] / (int)adjacencyRowList[index]);
                             }
                             else
                             {

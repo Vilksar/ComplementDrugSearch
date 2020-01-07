@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ComplementDrugSearch.Models
+﻿namespace ComplementDrugSearch.Models
 {
     /// <summary>
     /// Represents a drug.
