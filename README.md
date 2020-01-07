@@ -49,7 +49,7 @@ This mode has four mandatory arguments (omitting any of them will return an erro
   
   If the file is in a different format, or no proteins or interactions could be found, an error will be returned. The order of the proteins is important, as the network is directed. Thus, `Protein A;Protein B` is not the same as `Protein B;Protein A`, and they can both appear in the network. Any duplicate interactions will be ignored. The set of proteins in the network will be automatically inferred from the set of interactions. This argument does not have a default value.
   
-* `--Drugs`. Use this argument to specify the path to the file containing the possible drugs. Each drug should be on a new line, with its elements separated by semicolons. Each drug should contain the drug name, the corresponding drug target, and the type ("-1" for a drug that down-regulates its drug target, "1" for a drug that up-regulates its drug target, or "0" otherwise), for example:
+* `--Drugs`. Use this argument to specify the path to the file containing the possible drugs. Each drug should be on a new line, with its elements separated by semicolons. Each drug should contain the drug name, the corresponding drug-target, and the type ("-1" for a drug that down-regulates its drug-target, "1" for a drug that up-regulates its drug-target, or "0" otherwise), for example:
   
   ```
   Drug 1;Protein A;-1
@@ -76,10 +76,10 @@ This mode has four mandatory arguments (omitting any of them will return an erro
   
   If the file is in a different format, or no proteins could be found in the network, an error will be returned. Only the proteins which already appear in the network will be considered. Any duplicate proteins will be ignored. This argument does not have a default value and can be omitted if disease-essential proteins are provided.
 
-* `--Initial`. Use this argument to specify the name of the initial drug or drug target. If the initial drug is not in the list of drugs or its corresponding drug-target does not appear in the network, an error will be returned. This argument does not have a default value.
+* `--Initial`. Use this argument to specify the name of the initial drug or drug-target. If the initial drug is not in the list of drugs or its corresponding drug-target does not appear in the network, an error will be returned. This argument does not have a default value.
 
 * `--MaximumPath`. (optional) Use this argument to specify the length of the maximum path between the drug-targets and the essential proteins. It must be a positive integer. The default value is "3".
 
 * `--NumberOfSolutions`. (optional) Use this argument to specify the maximum number of complementing drugs to be returned. The default value is "10".
 
-* `--Output`. (optional) Use this argument to specify the path to the output file where the details about the complementing drugs will be written. Permission to write is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the edges, followed by the name of the initial drug, the name of its drug-target, and the current date and time.
+* `--Output`. (optional) Use this argument to specify the path to the output file where the details about the complementing drugs will be written. Permission to write is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the initial drug, the name of its drug-target, and the current date and time.
