@@ -17,7 +17,7 @@ namespace ComplementDrugSearch.Services
     /// <summary>
     /// Represents the hosted service corresponding to an application run.
     /// </summary>
-    public class ApplicationRunService : BackgroundService
+    public class ApplicationRunCliHostedService : BackgroundService
     {
         /// <summary>
         /// Represents the configuration.
@@ -27,7 +27,7 @@ namespace ComplementDrugSearch.Services
         /// <summary>
         /// Represents the logger.
         /// </summary>
-        private readonly ILogger<ApplicationRunService> _logger;
+        private readonly ILogger<ApplicationRunCliHostedService> _logger;
 
         /// <summary>
         /// Represents the host application lifetime.
@@ -39,7 +39,7 @@ namespace ComplementDrugSearch.Services
         /// </summary>
         /// <param name="arguments">Represents the program arguments.</param>
         /// <param name="logger">Represents the logger.</param>
-        public ApplicationRunService(IConfiguration configuration, ILogger<ApplicationRunService> logger, IHostApplicationLifetime hostApplicationLifetime)
+        public ApplicationRunCliHostedService(IConfiguration configuration, ILogger<ApplicationRunCliHostedService> logger, IHostApplicationLifetime hostApplicationLifetime)
         {
             _configuration = configuration;
             _logger = logger;
@@ -51,37 +51,10 @@ namespace ComplementDrugSearch.Services
         /// </summary>
         /// <param name="cancellationToken">The cancellation token corresponding to the task.</param>
         /// <returns>A runnable task.</returns>
-        protected override Task ExecuteAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
         {
-            // Check if there is any request for displaying the help details.
-            if (bool.TryParse(_configuration["Help"], out var displayHelp) && displayHelp)
-            {
-                // Log a message.
-                _logger.LogInformation(string.Concat(
-                    "\n\tWelcome to the ComplimentDrugSearch application!",
-                    "\n\t",
-                    "\n\t---",
-                    "\n\t",
-                    "\n\tThe following arguments can be provided:",
-                    "\n\t--Help\tUse this parameter to display this help message.",
-                    "\n\t--Interactions\tUse this parameter to specify the path to the file containing the protein-protein interactions. Each interaction should be on a new line, with its elements separated by tab characters. Each interaction should contain the source protein, the target protein, and the type (\"-1\" for a down-regulating interaction or equivalent, \"1\" for an up-regulating interaction or equivalent, or \"0\" otherwise).",
-                    "\n\t--Drugs\tUse this parameter to specify the path to the file containing the possible drugs. Each drug should be on a new line, with its elements separated by tab characters. Each drug should contain the drug name, the corresponding drug target, and the type (\"-1\" for a drug that down-regulates its drug target, \"1\" for a drug that up-regulates its drug target, or \"0\" otherwise). Only the drugs with drug targets appearing in the interactions will be considered.",
-                    "\n\t--DiseaseEssentialProteins\t(optional) Use this parameter to specify the path to the file containing the disease-essential proteins. Only proteins appearing in the interactions will be considered. Each protein should be on a new line. The parameter can be omitted if healthy-essential proteins are provided.",
-                    "\n\t--HealthyEssentialProteins\t(optional) Use this parameter to specify the path to the file containing the disease-essential proteins. Only proteins appearing in the interactions will be considered. Each protein should be on a new line. The parameter can be omitted if disease-essential proteins are provided.",
-                    "\n\t--Output\t(optional) Use this parameter to specify the path to the output file to be returned and created by the current run of the application. Writing permission is needed for the corresponding directory. If the file already exists, it will be overwritten! By default, the output file will be created in the same directory as the interactions file.",
-                    "\n\t--Initial\tUse this parameter to specify the name of the initial drug or drug target, whose complement is needed. The initial drug must be in the list of drugs, and its corresponding drug target must appear in the interactions.",
-                    "\n\t--MaximumPath\t(optional) Use this parameter to specify the length of the maximum path between the drug targets and the essential proteins. By default, it is equal to \"3\".",
-                    "\n\t--NumberOfSolutions\t(optional) Use this parameter to specify the maximum number of solutions to be returned by the application. By default, it is equal to \"10\".",
-                    "\n\tExamples of posible usage:",
-                    "\n\t--Help \"True\"",
-                    "\n\t--Interactions \"Path/To/FileContainingInteractions.extension\" --Drugs \"Path/To/FileContainingDrugs.extension\" --DiseaseEssentialProteins \"Path/To/FileContainingDiseaseEssentialProteins.extension\" --Initial \"InitialDrugName\"",
-                    "\n\t--Interactions \"Path/To/FileContainingInteractions.extension\" --Drugs \"Path/To/FileContainingDrugs.extension\" --DiseaseEssentialProteins \"Path/To/FileContainingDiseaseEssentialProteins.extension\" --HealthyEssentialProteins \"Path/To/FileContainingHealthyEssentialProteins.extension\" --Initial \"InitialDrugName\" --Output \"Path/To/OutputFile.extension\" --MaximumPath \"3\" --NumberOfSolutions \"10\"",
-                    "\n\t"));
-                // Stop the application.
-                _hostApplicationLifetime.StopApplication();
-                // Return a successfully completed task.
-                return Task.CompletedTask;
-            }
+            // Wait for a completed task, in order to not get a warning about having an async method.
+            await Task.CompletedTask;
             // Get the parameters from the configuration.
             var interactionsFilepath = _configuration["Interactions"];
             var drugsFilepath = _configuration["Drugs"];
@@ -99,7 +72,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if we have a file containing the drugs.
             if (string.IsNullOrEmpty(drugsFilepath))
@@ -109,7 +82,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if we have a file containing the essential proteins.
             if (string.IsNullOrEmpty(diseaseEssentialProteinsFilepath) && string.IsNullOrEmpty(healthyEssentialProteinsFilepath))
@@ -119,7 +92,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Get the current directory.
             var currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
@@ -131,7 +104,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if the file containing the drugs exists.
             if (!File.Exists(drugsFilepath))
@@ -141,7 +114,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if the file containing the disease essential proteins exists.
             if (!string.IsNullOrEmpty(diseaseEssentialProteinsFilepath) && !File.Exists(diseaseEssentialProteinsFilepath))
@@ -151,7 +124,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if the file containing the healthy essential proteins exists.
             if (!string.IsNullOrEmpty(healthyEssentialProteinsFilepath) && !File.Exists(healthyEssentialProteinsFilepath))
@@ -161,7 +134,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Define the variables needed for the algorithm.
             var drugs = new List<Drug>();
@@ -172,7 +145,7 @@ namespace ComplementDrugSearch.Services
             {
                 // Read all the rows in the file as tuples of (string, string, int).
                 var rows = File.ReadAllLines(interactionsFilepath)
-                    .Select(item => item.Split("\t"))
+                    .Select(item => item.Split(";"))
                     .Where(item => item.Length > 2)
                     .Where(item => !string.IsNullOrEmpty(item[0]) && !string.IsNullOrEmpty(item[1]) && int.TryParse(item[2], out var result));
                 // Get all of the proteins.
@@ -194,14 +167,14 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Try to read the drugs from the file.
             try
             {
                 // Read all the rows in the file as tuples of (string, string).
                 var rows = File.ReadAllLines(drugsFilepath)
-                    .Select(item => item.Split("\t"))
+                    .Select(item => item.Split(";"))
                     .Where(item => item.Length > 2)
                     .Where(item => !string.IsNullOrEmpty(item[0]) && !string.IsNullOrEmpty(item[1]) && int.TryParse(item[2], out var result));
                 // Get all of the drugs.
@@ -217,7 +190,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if there are any disease essential proteins to read.
             if (!string.IsNullOrEmpty(diseaseEssentialProteinsFilepath))
@@ -243,7 +216,7 @@ namespace ComplementDrugSearch.Services
                     // Stop the application.
                     _hostApplicationLifetime.StopApplication();
                     // Return a successfully completed task.
-                    return Task.CompletedTask;
+                    return;
                 }
             }
             // Check if there are any healthy essential proteins to read.
@@ -270,7 +243,7 @@ namespace ComplementDrugSearch.Services
                     // Stop the application.
                     _hostApplicationLifetime.StopApplication();
                     // Return a successfully completed task.
-                    return Task.CompletedTask;
+                    return;
                 }
             }
             // Check if there aren't any proteins.
@@ -281,7 +254,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if there aren't any interactions.
             if (!interactions.Any())
@@ -291,7 +264,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if there aren't any drugs.
             if (!drugs.Any())
@@ -301,7 +274,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Get the essential proteins.
             var essentialProteins = proteins.Where(item => item.IsDiseaseEssential || item.IsHealthyEssential);
@@ -313,7 +286,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Get the initial drug.
             var initialDrug = drugs.FirstOrDefault(item => item.Name == initialDrugString || item.Protein.Name == initialDrugString);
@@ -325,7 +298,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Assign the default maximum path.
             maximumPathString = !string.IsNullOrEmpty(maximumPathString) ? maximumPathString : "3";
@@ -337,7 +310,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if the maximum path is valid.
             if (maximumPath <= 0)
@@ -347,7 +320,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Assign the default number of returned solutions.
             numberOfSolutionsString = !string.IsNullOrEmpty(numberOfSolutionsString) ? numberOfSolutionsString : "10";
@@ -359,7 +332,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if the number of solutions is valid.
             if (numberOfSolutions <= 0)
@@ -369,7 +342,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Check if there isn't any output filepath.
             if (string.IsNullOrEmpty(outputFilepath))
@@ -426,7 +399,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {subgraphProteins.Count()} proteins in the subgraph, out of which {subgraphEssentialProteins.Count()} are essential.");
@@ -454,7 +427,7 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {extendedSubgraphProteins.Count()} proteins and {extendedSubgraphDrugs.Count()} drugs in the extended subgraph.");
@@ -766,14 +739,14 @@ namespace ComplementDrugSearch.Services
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
-                return Task.CompletedTask;
+                return;
             }
             // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Application ended in {stopwatch.Elapsed}.");
             // Stop the application.
             _hostApplicationLifetime.StopApplication();
             // Return a successfully completed task.
-            return Task.CompletedTask;
+            return;
         }
     }
 }
