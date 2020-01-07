@@ -344,11 +344,29 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return;
             }
-            // Check if there isn't any output filepath.
-            if (string.IsNullOrEmpty(outputFilepath))
+            // Check if there is an output filepath provided.
+            if (!string.IsNullOrEmpty(outputFilepath))
+            {
+                // Try to write to the output file.
+                try
+                {
+                    // Write to the specified output file.
+                    File.WriteAllText(outputFilepath, string.Empty);
+                }
+                catch (Exception ex)
+                {
+                    // Log an error.
+                    _logger.LogError($"The error \"{ex.Message}\" occured while trying to write to the output file \"{outputFilepath}\".");
+                    // Stop the application.
+                    _hostApplicationLifetime.StopApplication();
+                    // Return a successfully completed task.
+                    return;
+                }
+            }
+            else
             {
                 // Assign the default value.
-                outputFilepath = Path.Combine(Path.GetFullPath(interactionsFilepath).Replace(Path.GetFileName(interactionsFilepath), string.Empty), $"{initialDrug.Name}_{initialDrug.Protein.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json".Replace(" ", string.Empty));
+                outputFilepath = interactionsFilepath.Replace(Path.GetExtension(interactionsFilepath), $"_{initialDrug.Name}_{initialDrug.Protein.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json");
             }
             // Log a message about the loaded data.
             _logger.LogInformation($"The data has been loaded successfully. There are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential and {proteins.Count(item => item.IsHealthyEssential)} healthy essential) and {interactions.Count()} interactions. The program will look for complement drugs around the initial drug \"{initialDrug.Name}\" (with the drug target \"{initialDrug.Protein.Name}\"), up to a maximum path length of \"{maximumPath}\" and save \"{numberOfSolutions}\" solution(s) to the output file \"{outputFilepath}\".");
