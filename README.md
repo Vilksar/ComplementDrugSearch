@@ -152,4 +152,4 @@ This mode has four mandatory arguments (omitting any of them will return an erro
 
 * `--NumberOfSolutions`. (optional) Use this argument to specify the maximum number of complementing drugs to be returned. The default value is "10".
 
-* `--Output`. (optional) Use this argument to specify the path to the output file where the details about the complementing drugs will be written. Permission to write is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the initial drug, the name of its drug-target, and the current date and time.
+* `--Output`. (optional) Use this argument to specify the path to the output file where the details about the complementing drugs will be written. Permission to write is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the file containing the initial proteins, and the current date and time.
