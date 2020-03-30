@@ -21,9 +21,11 @@ namespace ComplementDrugSearch
             // Get the current command-line arguments configuration.
             var configuration = new ConfigurationBuilder().AddCommandLine(args).Build();
             // Get the mode in which to run the application.
-            var mode = configuration["Mode"] ?? "Cli";
+            var mode = configuration["Mode"] ?? "Help";
             // Get the host to run based on the command-line arguments and build it.
-            using var host = (mode == "Cli" ? CreateCliHostBuilder(args) : CreateDefaultHostBuilder(args)).Build();
+            using var host = (mode == "Drug" ? CreateCliDrugHostBuilder(args) :
+                mode == "Proteins" ? CreateCliProteinsHostBuilder(args) :
+                CreateDefaultHostBuilder(args)).Build();
             // Try to run the application host.
             try
             {
@@ -40,7 +42,7 @@ namespace ComplementDrugSearch
         /// </summary>
         /// <param name="args">Represents the parameters for the web host builder.</param>
         /// <returns>Returns a new host containing the given hosted service.</returns>
-        public static IHostBuilder CreateCliHostBuilder(string[] args)
+        public static IHostBuilder CreateCliDrugHostBuilder(string[] args)
         {
             // Return a hosted service with the given options.
             return Host.CreateDefaultBuilder(args)
@@ -50,7 +52,26 @@ namespace ComplementDrugSearch
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<ApplicationRunCliHostedService>();
+                    services.AddHostedService<ApplicationRunCliDrugHostedService>();
+                });
+        }
+
+        /// <summary>
+        /// Creates a CLI host builder with the given parameters.
+        /// </summary>
+        /// <param name="args">Represents the parameters for the web host builder.</param>
+        /// <returns>Returns a new host containing the given hosted service.</returns>
+        public static IHostBuilder CreateCliProteinsHostBuilder(string[] args)
+        {
+            // Return a hosted service with the given options.
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureLogging(logging =>
+                {
+                    logging.SetMinimumLevel(LogLevel.Information);
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    services.AddHostedService<ApplicationRunCliProteinsHostedService>();
                 });
         }
 

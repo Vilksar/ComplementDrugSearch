@@ -17,7 +17,7 @@ namespace ComplementDrugSearch.Services
     /// <summary>
     /// Represents the hosted service corresponding to an application run.
     /// </summary>
-    public class ApplicationRunCliHostedService : BackgroundService
+    public class ApplicationRunCliDrugHostedService : BackgroundService
     {
         /// <summary>
         /// Represents the configuration.
@@ -27,7 +27,7 @@ namespace ComplementDrugSearch.Services
         /// <summary>
         /// Represents the logger.
         /// </summary>
-        private readonly ILogger<ApplicationRunCliHostedService> _logger;
+        private readonly ILogger<ApplicationRunCliDrugHostedService> _logger;
 
         /// <summary>
         /// Represents the host application lifetime.
@@ -37,9 +37,10 @@ namespace ComplementDrugSearch.Services
         /// <summary>
         /// Initializes a new instance of the class.
         /// </summary>
-        /// <param name="arguments">Represents the program arguments.</param>
+        /// <param name="configuration">Represents the configuration.</param>
         /// <param name="logger">Represents the logger.</param>
-        public ApplicationRunCliHostedService(IConfiguration configuration, ILogger<ApplicationRunCliHostedService> logger, IHostApplicationLifetime hostApplicationLifetime)
+        /// <param name="hostApplicationLifetime">Represents the host application lifetime.</param>
+        public ApplicationRunCliDrugHostedService(IConfiguration configuration, ILogger<ApplicationRunCliDrugHostedService> logger, IHostApplicationLifetime hostApplicationLifetime)
         {
             _configuration = configuration;
             _logger = logger;
