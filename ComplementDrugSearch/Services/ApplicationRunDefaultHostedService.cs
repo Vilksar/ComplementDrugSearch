@@ -77,7 +77,7 @@ namespace ComplementDrugSearch.Services
                 "\n\t--Initial\tUse this argument to specify the path to the file containing the initial proteins. Each protein should be on a new line. This argument does not have a default value.",
                 "\n\t--MaximumPath\t(optional) Use this argument to specify the maximum length of the path between the drug-targets and the essential proteins. The default value is \"3\".",
                 "\n\t--NumberOfSolutions\t(optional) Use this argument to specify the maximum number of complementing drugs to be returned. The default value is \"10\".",
-                "\n\t--Output\t(optional) Use this argument to specify the path to the output file where the solutions of the analysis will be written. Writing permission is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the initial drug, the name of its drug-target, and the current date and time.",
+                "\n\t--Output\t(optional) Use this argument to specify the path to the output file where the solutions of the analysis will be written. Writing permission is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the file containing the initial proteins, and the current date and time.",
                 "\n\t",
                 "\n\tExamples of posible usage:",
                 "\n\t--Mode \"Help\"",

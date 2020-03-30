@@ -409,7 +409,7 @@ namespace ComplementDrugSearch.Services
             else
             {
                 // Assign the default value.
-                outputFilepath = interactionsFilepath.Replace(Path.GetExtension(interactionsFilepath), $"_{Path.GetFileNameWithoutExtension(diseaseEssentialProteinsFilepath)}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json");
+                outputFilepath = interactionsFilepath.Replace(Path.GetExtension(interactionsFilepath), $"_{Path.GetFileNameWithoutExtension(initialProteinsFilepath)}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json");
             }
             // Log a message about the loaded data.
             _logger.LogInformation($"The data has been loaded successfully. There are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential, {proteins.Count(item => item.IsHealthyEssential)} healthy essential), and {initialProteins.Count()} initial proteins and {interactions.Count()} interactions. The program will look for possible drugs that affect the disease essential proteins, and not the healthy essential proteins around the initial proteins, up to a maximum path length of \"{maximumPath}\" and save \"{numberOfSolutions}\" solution(s) to the output file \"{outputFilepath}\".");
