@@ -161,10 +161,10 @@ namespace ComplementDrugSearch.Services
                     .Where(item => item.SourceProtein != null && item.TargetProtein != null)
                     .ToList();
             }
-            catch
+            catch (Exception exception)
             {
                 // Log an error.
-                _logger.LogError($"An error occured while reading the file \"{interactionsFilepath}\" (containing the interactions).");
+                _logger.LogError($"The error \"{exception.Message}\" occurred while reading the file \"{interactionsFilepath}\" (containing the interactions).");
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
@@ -184,10 +184,10 @@ namespace ComplementDrugSearch.Services
                     .Where(item => item.Protein != null)
                     .ToList();
             }
-            catch
+            catch (Exception exception)
             {
                 // Log an error.
-                _logger.LogError($"An error occured while reading the file \"{drugsFilepath}\" (containing the drugs).");
+                _logger.LogError($"The error \"{exception.Message}\" occurred while reading the file \"{drugsFilepath}\" (containing the drugs).");
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
@@ -210,10 +210,10 @@ namespace ComplementDrugSearch.Services
                         protein.IsDiseaseEssential = true;
                     }
                 }
-                catch
+                catch (Exception exception)
                 {
                     // Log an error.
-                    _logger.LogError($"An error occured while reading the file \"{diseaseEssentialProteinsFilepath}\" (containing the disease essential proteins).");
+                    _logger.LogError($"The error \"{exception.Message}\" occurred while reading the file \"{diseaseEssentialProteinsFilepath}\" (containing the disease essential proteins).");
                     // Stop the application.
                     _hostApplicationLifetime.StopApplication();
                     // Return a successfully completed task.
@@ -237,10 +237,10 @@ namespace ComplementDrugSearch.Services
                         protein.IsHealthyEssential = true;
                     }
                 }
-                catch
+                catch (Exception exception)
                 {
                     // Log an error.
-                    _logger.LogError($"An error occured while reading the file \"{healthyEssentialProteinsFilepath}\" (containing the healthy essential proteins).");
+                    _logger.LogError($"The error \"{exception.Message}\" occurred while reading the file \"{healthyEssentialProteinsFilepath}\" (containing the healthy essential proteins).");
                     // Stop the application.
                     _hostApplicationLifetime.StopApplication();
                     // Return a successfully completed task.
@@ -345,29 +345,26 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return;
             }
-            // Check if there is an output filepath provided.
-            if (!string.IsNullOrEmpty(outputFilepath))
+            // Check if there isn't an output filepath provided.
+            if (string.IsNullOrEmpty(outputFilepath))
             {
-                // Try to write to the output file.
-                try
-                {
-                    // Write to the specified output file.
-                    File.WriteAllText(outputFilepath, string.Empty);
-                }
-                catch (Exception ex)
-                {
-                    // Log an error.
-                    _logger.LogError($"The error \"{ex.Message}\" occured while trying to write to the output file \"{outputFilepath}\".");
-                    // Stop the application.
-                    _hostApplicationLifetime.StopApplication();
-                    // Return a successfully completed task.
-                    return;
-                }
-            }
-            else
-            {
-                // Assign the default value.
+                // Assign the default value to the output filepath.
                 outputFilepath = interactionsFilepath.Replace(Path.GetExtension(interactionsFilepath), $"_{initialDrug.Name}_{initialDrug.Protein.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json");
+            }
+            // Try to write to the output file.
+            try
+            {
+                // Write to the specified output file.
+                File.WriteAllText(outputFilepath, string.Empty);
+            }
+            catch (Exception exception)
+            {
+                // Log an error.
+                _logger.LogError($"The error \"{exception.Message}\" occurred while trying to write to the output file \"{outputFilepath}\".");
+                // Stop the application.
+                _hostApplicationLifetime.StopApplication();
+                // Return a successfully completed task.
+                return;
             }
             // Log a message about the loaded data.
             _logger.LogInformation($"The data has been loaded successfully. There are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential and {proteins.Count(item => item.IsHealthyEssential)} healthy essential) and {interactions.Count()} interactions. The program will look for complement drugs around the initial drug \"{initialDrug.Name}\" (with the drug target \"{initialDrug.Protein.Name}\"), up to a maximum path length of \"{maximumPath}\" and save \"{numberOfSolutions}\" solution(s) to the output file \"{outputFilepath}\".");
@@ -748,11 +745,13 @@ namespace ComplementDrugSearch.Services
             {
                 // Write the text to the file.
                 File.WriteAllText(outputFilepath, outputText);
+                // Log a message.
+                _logger.LogInformation($"The results have been written to the file \"{outputFilepath}\".");
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
                 // Log an error.
-                _logger.LogError($"The error \"{ex.Message}\" occured while writing the results to the file \"{outputFilepath}\". The results will be displayed in the console instead.");
+                _logger.LogError($"The error \"{exception.Message}\" occurred while writing the results to the file \"{outputFilepath}\". The results will be displayed below instead.");
                 // Log a message.
                 _logger.LogInformation($"\n{outputText}");
                 // Stop the application.

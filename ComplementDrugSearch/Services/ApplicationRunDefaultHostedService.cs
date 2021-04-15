@@ -48,6 +48,8 @@ namespace ComplementDrugSearch.Services
         {
             // Wait for a completed task, in order to not get a warning about having an async method.
             await Task.CompletedTask;
+            // Get the parameters from the configuration.
+            var mode = _configuration["Mode"];
             // Log a message.
             _logger.LogInformation(string.Concat(
                 "\n\tWelcome to the ComplementDrugSearch application!",
@@ -67,7 +69,7 @@ namespace ComplementDrugSearch.Services
                 "\n\t--Initial\tUse this argument to specify the name of the initial drug or drug-target. This argument does not have a default value.",
                 "\n\t--MaximumPath\t(optional) Use this argument to specify the maximum length of the path between the drug-targets and the essential proteins. The default value is \"3\".",
                 "\n\t--NumberOfSolutions\t(optional) Use this argument to specify the maximum number of complementing drugs to be returned. The default value is \"10\".",
-                "\n\t--Output\t(optional) Use this argument to specify the path to the output file where the solutions of the analysis will be written. Writing permission is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the initial drug, the name of its drug-target, and the current date and time.",
+                "\n\t--Output\t(optional) Use this argument to specify the path to the output file where the results will be written. Writing permission is needed for the corresponding directory. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the initial drug, the name of its drug-target, and the current date and time.",
                 "\n\t",
                 "\n\tArguments for \"Proteins\" mode:",
                 "\n\t--Interactions\tUse this argument to specify the path to the file containing the protein-protein interactions. Each interaction should be on a new line, with its elements separated by semicolons. Each interaction should contain the source protein, the target protein, and the type (\"-1\" for a down-regulating interaction or equivalent, \"1\" for an up-regulating interaction or equivalent, or \"0\" otherwise). This argument does not have a default value.",
@@ -77,7 +79,7 @@ namespace ComplementDrugSearch.Services
                 "\n\t--Initial\tUse this argument to specify the path to the file containing the initial proteins. Each protein should be on a new line. This argument does not have a default value.",
                 "\n\t--MaximumPath\t(optional) Use this argument to specify the maximum length of the path between the drug-targets and the essential proteins. The default value is \"3\".",
                 "\n\t--NumberOfSolutions\t(optional) Use this argument to specify the maximum number of complementing drugs to be returned. The default value is \"10\".",
-                "\n\t--Output\t(optional) Use this argument to specify the path to the output file where the solutions of the analysis will be written. Writing permission is needed for the corresponding folder. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the file containing the initial proteins, and the current date and time.",
+                "\n\t--Output\t(optional) Use this argument to specify the path to the output file where the results will be written. Writing permission is needed for the corresponding directory. If a file with the same name already exists, it will be automatically overwritten. The default value is the name of the file containing the interactions, followed by the name of the file containing the initial proteins, and the current date and time.",
                 "\n\t",
                 "\n\tExamples of posible usage:",
                 "\n\t--Mode \"Help\"",
@@ -86,8 +88,6 @@ namespace ComplementDrugSearch.Services
                 "\n\t--Mode \"Proteins\" --Interactions \"Path/To/FileContainingInteractions.extension\" --Drugs \"Path/To/FileContainingDrugs.extension\" --DiseaseEssentialProteins \"Path/To/FileContainingDiseaseEssentialProteins.extension\" --Initial \"Path/To/FileContainingInitialProteins.extension\"",
                 "\n\t--Mode \"Proteins\" --Interactions \"Path/To/FileContainingInteractions.extension\" --Drugs \"Path/To/FileContainingDrugs.extension\" --DiseaseEssentialProteins \"Path/To/FileContainingDiseaseEssentialProteins.extension\" --HealthyEssentialProteins \"Path/To/FileContainingHealthyEssentialProteins.extension\" --Initial \"Path/To/FileContainingInitialProteins.extension\" --MaximumPath \"3\" --NumberOfSolutions \"10\" --Output \"Path/To/OutputFile.extension\"",
                 "\n\t"));
-            // Get the mode in which to run the application.
-            var mode = _configuration["Mode"];
             // Check if the mode is not valid.
             if (mode != "Help")
             {
