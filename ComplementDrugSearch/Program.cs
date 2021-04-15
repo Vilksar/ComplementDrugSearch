@@ -56,7 +56,7 @@ namespace ComplementDrugSearch
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<ApplicationRunCliDrugHostedService>();
+                    services.AddHostedService<CliDrugHostedService>();
                 });
         }
 
@@ -75,7 +75,7 @@ namespace ComplementDrugSearch
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<ApplicationRunCliProteinsHostedService>();
+                    services.AddHostedService<CliProteinsHostedService>();
                 });
         }
 
@@ -94,7 +94,7 @@ namespace ComplementDrugSearch
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddHostedService<ApplicationRunDefaultHostedService>();
+                    services.AddHostedService<DefaultHostedService>();
                 });
         }
     }

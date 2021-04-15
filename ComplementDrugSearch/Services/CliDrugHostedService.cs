@@ -17,7 +17,7 @@ namespace ComplementDrugSearch.Services
     /// <summary>
     /// Represents the hosted service corresponding to an application run.
     /// </summary>
-    public class ApplicationRunCliProteinsHostedService : BackgroundService
+    public class CliDrugHostedService : BackgroundService
     {
         /// <summary>
         /// Represents the configuration.
@@ -27,7 +27,7 @@ namespace ComplementDrugSearch.Services
         /// <summary>
         /// Represents the logger.
         /// </summary>
-        private readonly ILogger<ApplicationRunCliProteinsHostedService> _logger;
+        private readonly ILogger<CliDrugHostedService> _logger;
 
         /// <summary>
         /// Represents the host application lifetime.
@@ -38,9 +38,9 @@ namespace ComplementDrugSearch.Services
         /// Initializes a new instance of the class.
         /// </summary>
         /// <param name="configuration">Represents the configuration.</param>
-        /// <param name="arguments">Represents the program arguments.</param>
         /// <param name="logger">Represents the logger.</param>
-        public ApplicationRunCliProteinsHostedService(IConfiguration configuration, ILogger<ApplicationRunCliProteinsHostedService> logger, IHostApplicationLifetime hostApplicationLifetime)
+        /// <param name="hostApplicationLifetime">Represents the host application lifetime.</param>
+        public CliDrugHostedService(IConfiguration configuration, ILogger<CliDrugHostedService> logger, IHostApplicationLifetime hostApplicationLifetime)
         {
             _configuration = configuration;
             _logger = logger;
@@ -61,8 +61,8 @@ namespace ComplementDrugSearch.Services
             var drugsFilepath = _configuration["Drugs"];
             var diseaseEssentialProteinsFilepath = _configuration["DiseaseEssentialProteins"];
             var healthyEssentialProteinsFilepath = _configuration["HealthyEssentialProteins"];
-            var initialProteinsFilepath = _configuration["InitialProteins"];
             var outputFilepath = _configuration["Output"];
+            var initialDrugString = _configuration["Initial"];
             var maximumPathString = _configuration["MaximumPath"];
             var numberOfSolutionsString = _configuration["NumberOfSolutions"];
             // Check if we have a file containing the interactions.
@@ -90,16 +90,6 @@ namespace ComplementDrugSearch.Services
             {
                 // Log an error.
                 _logger.LogError("No file containing the essential proteins has been provided.");
-                // Stop the application.
-                _hostApplicationLifetime.StopApplication();
-                // Return a successfully completed task.
-                return;
-            }
-            // Check if we have a file containing the initial proteins.
-            if (string.IsNullOrEmpty(initialProteinsFilepath))
-            {
-                // Log an error.
-                _logger.LogError("No file containing the initial proteins has been provided.");
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
@@ -147,21 +137,10 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return;
             }
-            // Check if the file containing the initial proteins exists.
-            if (!File.Exists(initialProteinsFilepath))
-            {
-                // Log an error.
-                _logger.LogError($"The file \"{initialProteinsFilepath}\" (containing the initial proteins) could not be found in the current directory \"{currentDirectory}\".");
-                // Stop the application.
-                _hostApplicationLifetime.StopApplication();
-                // Return a successfully completed task.
-                return;
-            }
             // Define the variables needed for the algorithm.
             var drugs = new List<Drug>();
             var proteins = new List<Protein>();
             var interactions = new List<Interaction>();
-            var initialProteins = new List<Protein>();
             // Try to read the interactions from the file.
             try
             {
@@ -268,29 +247,6 @@ namespace ComplementDrugSearch.Services
                     return;
                 }
             }
-            // Try to read the initial proteins from the file.
-            try
-            {
-                // Read all the rows in the file as a list of strings.
-                var rows = File.ReadAllLines(initialProteinsFilepath)
-                    .Where(item => !string.IsNullOrEmpty(item))
-                    .ToHashSet();
-                // Go over each of the corresponding proteins.
-                foreach (var protein in proteins.Where(item => rows.Contains(item.Name)))
-                {
-                    // Add it to the list of initial proteins.
-                    initialProteins.Add(protein);
-                }
-            }
-            catch (Exception exception)
-            {
-                // Log an error.
-                _logger.LogError($"The error \"{exception.Message}\" occurred while reading the file \"{initialProteinsFilepath}\" (containing the initial proteins).");
-                // Stop the application.
-                _hostApplicationLifetime.StopApplication();
-                // Return a successfully completed task.
-                return;
-            }
             // Check if there aren't any proteins.
             if (!proteins.Any())
             {
@@ -333,11 +289,13 @@ namespace ComplementDrugSearch.Services
                 // Return a successfully completed task.
                 return;
             }
-            // Check if there aren't any initial proteins.
-            if (!initialProteins.Any())
+            // Get the initial drug.
+            var initialDrug = drugs.FirstOrDefault(item => item.Name == initialDrugString || item.Protein.Name == initialDrugString);
+            // Check if there isn't any initial drug.
+            if (initialDrug == null)
             {
                 // Log an error.
-                _logger.LogError($"No initial proteins could be found with the provided data.");
+                _logger.LogError($"The specified initial drug could not be found in the list of drugs or no interactions contain its corresponding drug target.");
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
@@ -391,7 +349,7 @@ namespace ComplementDrugSearch.Services
             if (string.IsNullOrEmpty(outputFilepath))
             {
                 // Assign the default value to the output filepath.
-                outputFilepath = interactionsFilepath.Replace(Path.GetExtension(interactionsFilepath), $"_{Path.GetFileNameWithoutExtension(initialProteinsFilepath)}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json");
+                outputFilepath = interactionsFilepath.Replace(Path.GetExtension(interactionsFilepath), $"_{initialDrug.Name}_{initialDrug.Protein.Name}_{DateTime.Now.ToString("yyyyMMddHHmmss")}.json");
             }
             // Try to write to the output file.
             try
@@ -409,7 +367,7 @@ namespace ComplementDrugSearch.Services
                 return;
             }
             // Log a message about the loaded data.
-            _logger.LogInformation($"The data has been loaded successfully. There are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential, {proteins.Count(item => item.IsHealthyEssential)} healthy essential), and {initialProteins.Count()} initial proteins and {interactions.Count()} interactions. The program will look for possible drugs that affect the disease essential proteins, and not the healthy essential proteins around the initial proteins, up to a maximum path length of \"{maximumPath}\" and save \"{numberOfSolutions}\" solution(s) to the output file \"{outputFilepath}\".");
+            _logger.LogInformation($"The data has been loaded successfully. There are {proteins.Count()} proteins (out of which {proteins.Count(item => item.IsDiseaseEssential)} disease essential and {proteins.Count(item => item.IsHealthyEssential)} healthy essential) and {interactions.Count()} interactions. The program will look for complement drugs around the initial drug \"{initialDrug.Name}\" (with the drug target \"{initialDrug.Protein.Name}\"), up to a maximum path length of \"{maximumPath}\" and save \"{numberOfSolutions}\" solution(s) to the output file \"{outputFilepath}\".");
             // Define a new stopwatch to measure the running time and start it.
             var stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -436,16 +394,14 @@ namespace ComplementDrugSearch.Services
                 directionMatrixList.Add(directionMatrixList.Last().Multiply(directionMatrix));
             }
             // Log a message.
-            _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the subgraph corresponding to the initial proteins.");
-            // Get all proteins which can reach the initial proteins within maximum path.
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the subgraph corresponding to the initial drug.");
+            // Get all proteins which can be reached from the initial drug within maximum path.
             var subgraphProteins = adjacencyMatrixList
-                .Select(item => initialProteins
-                    .Select(item1 => item
-                        .Column(item1.Index)
-                        .Select((value, index) => new { Item1 = value, Item2 = index })
-                        .Where(item2 => item2.Item1 != 0)
-                        .Select(item2 => item2.Item2))
-                    .SelectMany(item1 => item1))
+                .Select(item => item
+                    .Row(initialDrug.Protein.Index)
+                    .Select((value, index) => new { Item1 = value, Item2 = index })
+                    .Where(item1 => item1.Item1 != 0)
+                    .Select(item1 => item1.Item2))
                 .SelectMany(item => item)
                 .Distinct()
                 .Select(item => proteins[item]);
@@ -455,35 +411,51 @@ namespace ComplementDrugSearch.Services
             if (!subgraphEssentialProteins.Any())
             {
                 // Log an error.
-                _logger.LogError($"No essential proteins could be found within the subgraph corresponding to the initial proteins.");
+                _logger.LogError($"No essential proteins could be found within the subgraph corresponding to the initial drug.");
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
                 return;
             }
-            // Get all the drugs with drug targets in the subgraph.
-            var subgraphDrugs = drugs.Select(item => item.Protein).Intersect(subgraphProteins).Select(item => drugs.FirstOrDefault(item1 => item == item1.Protein));
-            // Check if there aren't any drugs in the subgraph.
-            if (!subgraphDrugs.Any())
+            // Log a message.
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {subgraphProteins.Count()} proteins in the subgraph, out of which {subgraphEssentialProteins.Count()} are essential.");
+            // Log a message.
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the extended subgraph.");
+            // Get all proteins which can reach the essential proteins in the subgraph within maximum path.
+            var extendedSubgraphProteins = adjacencyMatrixList
+                .Select(item => subgraphEssentialProteins
+                    .Select(item1 => item
+                        .Column(item1.Index)
+                        .Select((value, index) => new { Item1 = value, Item2 = index })
+                        .Where(item2 => item2.Item1 != 0)
+                        .Select(item2 => item2.Item2))
+                    .SelectMany(item1 => item1))
+                .SelectMany(item => item)
+                .Distinct()
+                .Select(item => proteins[item]);
+            // Get all the drugs with drug targets in the extended subgraph.
+            var extendedSubgraphDrugs = drugs.Select(item => item.Protein).Intersect(extendedSubgraphProteins).Select(item => drugs.FirstOrDefault(item1 => item == item1.Protein));
+            // Check if there aren't any drugs in the extended subgraph.
+            if (!extendedSubgraphDrugs.Any())
             {
                 // Log an error.
-                _logger.LogError($"No drugs with drug targets within the subgraph could be found.");
+                _logger.LogError($"No drugs with drug targets within the extended subgraph could be found.");
                 // Stop the application.
                 _hostApplicationLifetime.StopApplication();
                 // Return a successfully completed task.
                 return;
             }
             // Log a message.
-            _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {subgraphProteins.Count()} proteins in the subgraph, out of which {subgraphEssentialProteins.Count()} are essential, and {subgraphDrugs.Count()} drugs.");
+            _logger.LogInformation($"{DateTime.Now.ToString()}: Done! There are {extendedSubgraphProteins.Count()} proteins and {extendedSubgraphDrugs.Count()} drugs in the extended subgraph.");
             // Log a message.
             _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the direction from drugs to essential proteins within the extended subgraph.");
-            // Define the dictionary with the essential protein data for each drug in the subgraph.
+            // Define the dictionary with the essential protein data for each drug in the extended subgraph.
             var drugDictionary = new Dictionary<Drug, Dictionary<Protein, int>>();
             // Get the number of iterations.
             var currentIteration = 0;
-            var totalIterations = subgraphDrugs.Count();
-            // Go over each drug with target in the subgraph.
-            foreach (var drug in subgraphDrugs)
+            var totalIterations = extendedSubgraphDrugs.Count();
+            // Go over each drug with target in the extended subgraph.
+            foreach (var drug in extendedSubgraphDrugs)
             {
                 // Check if the application is stopping.
                 if (_hostApplicationLifetime.ApplicationStopping.IsCancellationRequested)
@@ -516,7 +488,7 @@ namespace ComplementDrugSearch.Services
                     // Define the directions for the essential protein, for each path length.
                     var directions = new List<int>();
                     // Go over each possible path.
-                    for (var index = 0; index < adjacencyRowList.Count(); index++)
+                    for (int index = 0; index < adjacencyRowList.Count(); index++)
                     {
                         // Check if there actually exists a path.
                         if (adjacencyRowList[index] != 0)
@@ -546,15 +518,141 @@ namespace ComplementDrugSearch.Services
             _logger.LogInformation($"{DateTime.Now.ToString()}: Computing the score of the drugs in the extended subgraph.");
             // Define the dictionary with the score of each drug.
             var drugScoreDictionary = new Dictionary<Drug, int>();
+            // Get the set of keys in the initial drug dictionary.
+            var initialDrugProteins = drugDictionary[initialDrug].Keys.ToList();
             // Go over each drug in the dictionary.
             foreach (var drug in drugDictionary.Keys.ToList())
             {
                 // Define the score.
                 var score = 0;
-                // Get the set of keys in the drug dictionary.
-                var drugProteins = drugDictionary[drug].Keys.ToList();
-                // Go over each drug protein that is disease essential.
-                foreach (var protein in drugProteins.Where(item => item.IsDiseaseEssential))
+                // Get the set of keys in the extra drug dictionary.
+                var extraDrugProteins = drugDictionary[drug].Keys.ToList();
+                // Get the common elements of both dictionaries, and the ones specific to each.
+                var commonProteins = initialDrugProteins.Intersect(extraDrugProteins);
+                var initialOnlyProteins = initialDrugProteins.Except(extraDrugProteins);
+                var extraOnlyProteins = extraDrugProteins.Except(initialDrugProteins);
+                // Go over each common element that is disease essential.
+                foreach (var protein in commonProteins.Where(item => item.IsDiseaseEssential))
+                {
+                    // Define the values to compare.
+                    var values = (drugDictionary[initialDrug][protein], drugDictionary[drug][protein]);
+                    // Compare the values.
+                    switch (values)
+                    {
+                        case (-1, -1):
+                            score += 0;
+                            break;
+                        case (-1, 0):
+                            score += 0;
+                            break;
+                        case (-1, 1):
+                            score += -1;
+                            break;
+                        case (0, -1):
+                            score += 1;
+                            break;
+                        case (0, 0):
+                            score += 0;
+                            break;
+                        case (0, 1):
+                            score += -2;
+                            break;
+                        case (1, -1):
+                            score += 1;
+                            break;
+                        case (1, 0):
+                            score += 0;
+                            break;
+                        case (1, 1):
+                            score += -2;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // Go over each common element that is healthy essential.
+                foreach (var protein in commonProteins.Where(item => item.IsHealthyEssential))
+                {
+                    // Define the values to compare.
+                    var values = (drugDictionary[initialDrug][protein], drugDictionary[drug][protein]);
+                    // Compare the values.
+                    switch (values)
+                    {
+                        case (-1, -1):
+                            score += -2;
+                            break;
+                        case (-1, 0):
+                            score += 0;
+                            break;
+                        case (-1, 1):
+                            score += 1;
+                            break;
+                        case (0, -1):
+                            score += -2;
+                            break;
+                        case (0, 0):
+                            score += 0;
+                            break;
+                        case (0, 1):
+                            score += 1;
+                            break;
+                        case (1, -1):
+                            score += -1;
+                            break;
+                        case (1, 0):
+                            score += 0;
+                            break;
+                        case (1, 1):
+                            score += 0;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // Go over each initial only element that is disease essential.
+                foreach (var protein in initialOnlyProteins.Where(item => item.IsDiseaseEssential))
+                {
+                    // Define the value to compare.
+                    var value = drugDictionary[initialDrug][protein];
+                    // Compare the value.
+                    switch (value)
+                    {
+                        case -1:
+                            score += 1;
+                            break;
+                        case 0:
+                            score += 0;
+                            break;
+                        case 1:
+                            score += -1;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // Go over each initial only element that is healthy essential.
+                foreach (var protein in initialOnlyProteins.Where(item => item.IsHealthyEssential))
+                {
+                    // Define the value to compare.
+                    var value = drugDictionary[initialDrug][protein];
+                    // Compare the value.
+                    switch (value)
+                    {
+                        case -1:
+                            score += -1;
+                            break;
+                        case 0:
+                            score += 0;
+                            break;
+                        case 1:
+                            score += 1;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                // Go over each extra only element that is disease essential.
+                foreach (var protein in extraOnlyProteins.Where(item => item.IsDiseaseEssential))
                 {
                     // Define the value to compare.
                     var value = drugDictionary[drug][protein];
@@ -574,8 +672,8 @@ namespace ComplementDrugSearch.Services
                             break;
                     }
                 }
-                // Go over each drug protein that is healthy essential.
-                foreach (var protein in drugProteins.Where(item => item.IsHealthyEssential))
+                // Go over each extra only element that is healthy essential.
+                foreach (var protein in extraOnlyProteins.Where(item => item.IsHealthyEssential))
                 {
                     // Define the value to compare.
                     var value = drugDictionary[drug][protein];
@@ -618,12 +716,18 @@ namespace ComplementDrugSearch.Services
                     {
                         ProteinCount = proteins.Count(),
                         InteractionCount = interactions.Count(),
-                        DrugCount = drugs.Count(),
                         DiseaseEssentialProteinCount = proteins.Count(item => item.IsDiseaseEssential),
                         HealthyEssentialProteinCount = proteins.Count(item => item.IsHealthyEssential),
-                        InitialProteins = initialProteins.Count()
+                        DrugCount = drugs.Count()
                     },
                     TimeElapsed = stopwatch.Elapsed,
+                },
+                InitialDrug = new
+                {
+                    Drug = initialDrug.Name,
+                    DrugTarget = initialDrug.Protein.Name,
+                    DiseaseEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsDiseaseEssential).ToDictionary(item => item.Key.Name, item => item.Value),
+                    HealthyEssentialProteins = drugDictionary[initialDrug].Where(item => item.Key.IsHealthyEssential).ToDictionary(item => item.Key.Name, item => item.Value)
                 },
                 SortedDrugs = drugSolutions.Select(item => new
                 {
